@@ -1,1 +1,1 @@
-{"/_app":"pages/_app.js","/_error":"pages/_error.js","/companies":"pages/companies.html","/companies/[id]":"pages/companies/[id].html","/":"pages/index.html","/_document":"pages/_document.js","/404":"pages/404.html"}
+{"/companies/[id]":"pages/companies/[id].html","/_app":"pages/_app.js","/":"pages/index.html","/_error":"pages/_error.js","/companies":"pages/companies.html","/_document":"pages/_document.js","/404":"pages/404.html"}
