@@ -27,17 +27,31 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+      - name: Debug - List workspace before build
+        run: ls -la
       - name: Build with Next.js
         run: npm run build
+      - name: Debug - List workspace after build
+        run: ls -la
       - name: Create .nojekyll file
-        run: touch out/.nojekyll
+        run: touch out/.nojekyll || echo "Failed to create .nojekyll file"
       - name: List output directory
-        run: ls -la out
-      - name: Upload artifact
+        run: ls -la out || echo "out directory does not exist"
+      - name: Upload artifact (standard)
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-pages-debug
+          path: ./out
+      - name: Create artifact directory
+        run: |
+          mkdir -p ./_site
+          cp -r ./out/* ./_site/ || echo "Failed to copy files"
+      - name: List _site directory
+        run: ls -la _site || echo "_site directory does not exist"
+      - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
-          name: github-pages
+          path: ./_site
 
   deploy:
     environment:
