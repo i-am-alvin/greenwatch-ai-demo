@@ -1,64 +1,122 @@
 import { useState } from 'react';
-import { Box, Container, Heading, Text, Grid, GridItem, VStack, HStack, Badge, Card, CardBody, Stack, Divider, CardFooter, Button, Image, Input, InputGroup, InputLeftElement } from '@chakra-ui/react';
-import { FaSearch, FaIndustry } from 'react-icons/fa';
+import { Box, Container, Heading, Text, Grid, GridItem, VStack, HStack, Badge, Card, CardBody, Stack, Divider, CardFooter, Button, Image, Input, InputGroup, InputLeftElement, Flex } from '@chakra-ui/react';
+import { FaSearch, FaIndustry, FaBuilding, FaChevronRight } from 'react-icons/fa';
 import Link from 'next/link';
 import Layout from '../../components/Layout';
 
-// 模擬企業數據
+// 重新組織企業數據，將公司和廠區分開
 const companiesData = [
   {
-    id: 'formosa-plastics-tx',
-    name: '台塑塑膠股份有限公司 (德州廠)',
-    englishName: 'Formosa Plastics Corporation, Texas',
+    id: 'formosa-plastics',
+    name: '台塑塑膠股份有限公司',
+    englishName: 'Formosa Plastics Corporation',
     industry: '石化產業',
-    location: '美國, 德州',
-    riskLevel: 'high',
-    recentViolations: 5,
-    image: 'https://via.placeholder.com/150?text=FPC'
-  },
-  {
-    id: 'formosa-plastics-tw',
-    name: '台塑塑膠股份有限公司 (台灣廠)',
-    englishName: 'Formosa Plastics Corporation, Taiwan',
-    industry: '石化產業',
-    location: '台灣, 雲林',
-    riskLevel: 'medium',
-    recentViolations: 2,
-    image: 'https://via.placeholder.com/150?text=FPC'
+    image: 'https://via.placeholder.com/150?text=FPC',
+    facilities: [
+      {
+        id: 'formosa-plastics-tx',
+        name: '德州廠',
+        englishName: 'Texas Plant',
+        location: '美國, 德州',
+        riskLevel: 'high',
+        recentViolations: 5,
+      },
+      {
+        id: 'formosa-plastics-tw',
+        name: '台灣廠',
+        englishName: 'Taiwan Plant',
+        location: '台灣, 雲林',
+        riskLevel: 'medium',
+        recentViolations: 2,
+      }
+    ]
   },
   {
     id: 'nan-ya-plastics',
     name: '南亞塑膠工業股份有限公司',
     englishName: 'Nan Ya Plastics Corporation',
     industry: '塑膠製造',
-    location: '台灣, 高雄',
-    riskLevel: 'medium',
-    recentViolations: 3,
-    image: 'https://via.placeholder.com/150?text=NYP'
+    image: 'https://via.placeholder.com/150?text=NYP',
+    facilities: [
+      {
+        id: 'nan-ya-plastics',
+        name: '高雄廠',
+        englishName: 'Kaohsiung Plant',
+        location: '台灣, 高雄',
+        riskLevel: 'medium',
+        recentViolations: 3,
+      }
+    ]
   },
   {
     id: 'evergreen-marine',
     name: '長榮海運股份有限公司',
     englishName: 'Evergreen Marine Corp.',
     industry: '航運業',
-    location: '台灣, 台北',
-    riskLevel: 'low',
-    recentViolations: 1,
-    image: 'https://via.placeholder.com/150?text=EMC'
+    image: 'https://via.placeholder.com/150?text=EMC',
+    facilities: [
+      {
+        id: 'evergreen-marine',
+        name: '台北總部',
+        englishName: 'Taipei Headquarters',
+        location: '台灣, 台北',
+        riskLevel: 'low',
+        recentViolations: 1,
+      }
+    ]
   },
   {
     id: 'china-steel',
     name: '中國鋼鐵股份有限公司',
     englishName: 'China Steel Corporation',
     industry: '鋼鐵製造',
-    location: '台灣, 高雄',
-    riskLevel: 'high',
-    recentViolations: 4,
-    image: 'https://via.placeholder.com/150?text=CSC'
+    image: 'https://via.placeholder.com/150?text=CSC',
+    facilities: [
+      {
+        id: 'china-steel',
+        name: '高雄廠',
+        englishName: 'Kaohsiung Plant',
+        location: '台灣, 高雄',
+        riskLevel: 'high',
+        recentViolations: 4,
+      }
+    ]
   }
 ];
 
-const CompanyCard = ({ company }) => {
+const CompanyCard = ({ company, onClick }) => {
+  return (
+    <Card boxShadow="md" borderRadius="lg" h="100%" onClick={onClick} cursor="pointer">
+      <CardBody>
+        <Image
+          src={company.image}
+          alt={company.name}
+          borderRadius="lg"
+          height="150px"
+          width="100%"
+          objectFit="cover"
+        />
+        <Stack mt="6" spacing="3">
+          <Heading size="md">{company.name}</Heading>
+          <Text color="gray.600" fontSize="sm">{company.englishName}</Text>
+          <HStack>
+            <FaIndustry />
+            <Text color="gray.600">{company.industry}</Text>
+          </HStack>
+          <Text color="gray.600">廠區數量: {company.facilities.length}</Text>
+        </Stack>
+      </CardBody>
+      <Divider />
+      <CardFooter>
+        <Button colorScheme="green" w="100%" rightIcon={<FaChevronRight />}>
+          查看廠區
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
+const FacilityCard = ({ facility, companyName }) => {
   const getRiskColor = (risk) => {
     switch (risk) {
       case 'high': return 'red';
@@ -80,29 +138,21 @@ const CompanyCard = ({ company }) => {
   return (
     <Card boxShadow="md" borderRadius="lg" h="100%">
       <CardBody>
-        <Image
-          src={company.image}
-          alt={company.name}
-          borderRadius="lg"
-          height="150px"
-          width="100%"
-          objectFit="cover"
-        />
-        <Stack mt="6" spacing="3">
-          <Heading size="md">{company.name}</Heading>
-          <Text color="gray.600" fontSize="sm">{company.englishName}</Text>
+        <Stack mt="3" spacing="3">
+          <Heading size="md">{companyName}</Heading>
+          <Heading size="sm" color="gray.600">{facility.name}</Heading>
+          <Text color="gray.600" fontSize="sm">{facility.englishName}</Text>
           <HStack>
-            <FaIndustry />
-            <Text color="gray.600">{company.industry}</Text>
+            <FaBuilding />
+            <Text color="gray.600">{facility.location}</Text>
           </HStack>
-          <Text color="gray.600">{company.location}</Text>
           <HStack>
-            <Badge colorScheme={getRiskColor(company.riskLevel)} px={2} py={1} borderRadius="full">
-              {getRiskText(company.riskLevel)}
+            <Badge colorScheme={getRiskColor(facility.riskLevel)} px={2} py={1} borderRadius="full">
+              {getRiskText(facility.riskLevel)}
             </Badge>
-            {company.recentViolations > 0 && (
+            {facility.recentViolations > 0 && (
               <Badge colorScheme="red" px={2} py={1} borderRadius="full">
-                近期違規: {company.recentViolations}
+                近期違規: {facility.recentViolations}
               </Badge>
             )}
           </HStack>
@@ -110,7 +160,7 @@ const CompanyCard = ({ company }) => {
       </CardBody>
       <Divider />
       <CardFooter>
-        <Link href={`/companies/${company.id}`} legacyBehavior>
+        <Link href={`/companies/${facility.id}`} legacyBehavior>
           <Button as="a" colorScheme="green" w="100%">
             查看詳情
           </Button>
@@ -122,6 +172,7 @@ const CompanyCard = ({ company }) => {
 
 export default function Companies() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [filteredCompanies, setFilteredCompanies] = useState(companiesData);
 
   const handleSearch = (e) => {
@@ -135,10 +186,20 @@ export default function Companies() {
         company.name.toLowerCase().includes(term.toLowerCase()) ||
         company.englishName.toLowerCase().includes(term.toLowerCase()) ||
         company.industry.toLowerCase().includes(term.toLowerCase()) ||
-        company.location.toLowerCase().includes(term.toLowerCase())
+        company.facilities.some(facility => 
+          facility.location.toLowerCase().includes(term.toLowerCase())
+        )
       );
       setFilteredCompanies(filtered);
     }
+  };
+
+  const handleCompanySelect = (company) => {
+    setSelectedCompany(company);
+  };
+
+  const handleBackToCompanies = () => {
+    setSelectedCompany(null);
   };
 
   return (
@@ -169,15 +230,40 @@ export default function Companies() {
             </InputGroup>
           </Box>
 
-          <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
-            {filteredCompanies.map(company => (
-              <GridItem key={company.id}>
-                <CompanyCard company={company} />
-              </GridItem>
-            ))}
-          </Grid>
+          {selectedCompany ? (
+            <>
+              <Flex justifyContent="space-between" alignItems="center" mb={4}>
+                <Heading size="md">
+                  {selectedCompany.name} - 廠區列表
+                </Heading>
+                <Button 
+                  onClick={handleBackToCompanies} 
+                  variant="outline" 
+                  colorScheme="green"
+                  leftIcon={<FaChevronRight transform="rotate(180deg)" />}
+                >
+                  返回公司列表
+                </Button>
+              </Flex>
+              <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+                {selectedCompany.facilities.map(facility => (
+                  <GridItem key={facility.id}>
+                    <FacilityCard facility={facility} companyName={selectedCompany.name} />
+                  </GridItem>
+                ))}
+              </Grid>
+            </>
+          ) : (
+            <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6}>
+              {filteredCompanies.map(company => (
+                <GridItem key={company.id}>
+                  <CompanyCard company={company} onClick={() => handleCompanySelect(company)} />
+                </GridItem>
+              ))}
+            </Grid>
+          )}
           
-          {filteredCompanies.length === 0 && (
+          {filteredCompanies.length === 0 && !selectedCompany && (
             <Box textAlign="center" py={10} bg="white" rounded="md" shadow="sm" p={6}>
               <Text fontSize="lg">沒有找到符合的企業，請嘗試其他搜索詞</Text>
             </Box>

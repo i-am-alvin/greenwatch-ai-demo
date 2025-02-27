@@ -104,8 +104,14 @@ const CompanyDetail = () => {
               </Link>
             </BreadcrumbItem>
 
+            <BreadcrumbItem>
+              <Link href="/companies" legacyBehavior>
+                <BreadcrumbLink>{companyInfo.name.split(' (')[0]}</BreadcrumbLink>
+              </Link>
+            </BreadcrumbItem>
+
             <BreadcrumbItem isCurrentPage>
-              <BreadcrumbLink>{companyInfo.name}</BreadcrumbLink>
+              <BreadcrumbLink>{companyInfo.facilityName}</BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
 
@@ -146,6 +152,13 @@ const CompanyDetail = () => {
                               </Box>
                               <Box>
                                 <Text>{companyInfo.name}</Text>
+                              </Box>
+                              
+                              <Box>
+                                <Text fontWeight="bold" color="gray.600">設施名稱:</Text>
+                              </Box>
+                              <Box>
+                                <Text>{companyInfo.facilityName}</Text>
                               </Box>
                               
                               <Box>
