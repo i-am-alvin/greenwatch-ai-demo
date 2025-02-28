@@ -44,6 +44,8 @@ jobs:
         run: npm run build
       - name: Create .nojekyll file
         run: touch out/.nojekyll
+      - name: Copy CNAME file
+        run: cp CNAME out/
       - name: Set permissions
         run: chmod -R a+r ./out
       - name: Upload artifact
