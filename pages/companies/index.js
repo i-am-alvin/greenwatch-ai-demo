@@ -8,10 +8,10 @@ import Layout from '../../components/Layout';
 const companiesData = [
   {
     id: 'formosa-plastics',
-    name: '台塑塑膠股份有限公司',
+    name: '台塑塑膠工業股份有限公司',
     englishName: 'Formosa Plastics Corporation',
-    industry: '石化產業',
-    image: 'https://via.placeholder.com/150?text=FPC',
+    industry: '塑膠製造',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6p9BrOMzuRo0kbRHIqkREHulpJqJ01JRTPQ&s',
     facilities: [
       {
         id: 'formosa-plastics-tx',
@@ -36,7 +36,7 @@ const companiesData = [
     name: '南亞塑膠工業股份有限公司',
     englishName: 'Nan Ya Plastics Corporation',
     industry: '塑膠製造',
-    image: 'https://via.placeholder.com/150?text=NYP',
+    image: 'https://www.npc.com.tw/j2npc/images/public/pic/location_06.jpg',
     facilities: [
       {
         id: 'nan-ya-plastics',
@@ -53,7 +53,7 @@ const companiesData = [
     name: '長榮海運股份有限公司',
     englishName: 'Evergreen Marine Corp.',
     industry: '航運業',
-    image: 'https://via.placeholder.com/150?text=EMC',
+    image: 'https://images.ctee.com.tw/newsphoto/2024-08-13/1024/20240813701678.jpg',
     facilities: [
       {
         id: 'evergreen-marine',
@@ -70,7 +70,7 @@ const companiesData = [
     name: '中國鋼鐵股份有限公司',
     englishName: 'China Steel Corporation',
     industry: '鋼鐵製造',
-    image: 'https://via.placeholder.com/150?text=CSC',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJdtuDYf03lUt5YMqHCLT5rliSnFgF95E9KQ&s',
     facilities: [
       {
         id: 'china-steel',
