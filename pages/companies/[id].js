@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { 
   Box, Container, Heading, Text, Tabs, TabList, TabPanels, Tab, TabPanel, 
   Table, Thead, Tbody, Tr, Th, Td, Badge, HStack, VStack, Link as ChakraLink, 
   SimpleGrid, Card, CardBody, Divider, Stack, Image, Skeleton, Stat, StatLabel, 
-  StatNumber, StatHelpText, Icon, Breadcrumb, BreadcrumbItem, BreadcrumbLink
+  StatNumber, StatHelpText, Icon, Breadcrumb, BreadcrumbItem, BreadcrumbLink,
+  Alert, AlertIcon, AlertTitle, AlertDescription,
+  Menu, MenuButton, MenuList, MenuItem, Button, Flex
 } from '@chakra-ui/react';
-import { FaExternalLinkAlt, FaCalendarAlt, FaNewspaper, FaBuilding, FaMoneyBillWave, FaChevronRight } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaCalendarAlt, FaNewspaper, FaBuilding, FaMoneyBillWave, FaChevronRight, FaFilter, FaChevronDown, FaCheck } from 'react-icons/fa';
 import { getCompanyBasicInfo, getViolationData, getRelatedNews } from '../../lib/api';
 import Layout from '../../components/Layout';
 import Link from 'next/link';
@@ -20,6 +22,11 @@ const CompanyDetail = () => {
   const [violationData, setViolationData] = useState([]);
   const [newsData, setNewsData] = useState({ international: [], domestic: [] });
   const [loading, setLoading] = useState(true);
+
+  // New states for filtering
+  const [plantSiteOptions, setPlantSiteOptions] = useState([]);
+  const [selectedViolationPlant, setSelectedViolationPlant] = useState('all');
+  const [selectedNewsPlant, setSelectedNewsPlant] = useState('all');
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +45,19 @@ const CompanyDetail = () => {
         // 獲取相關新聞
         const news = await getRelatedNews(id);
         setNewsData(news);
+
+        // Extract plant site options from violations and news
+        const violationSites = [...new Set(violations.map(v => v.plantSite).filter(Boolean))];
+        const newsSitesDomestic = [...new Set(news.domestic.map(n => n.plantSite).filter(Boolean))];
+        const newsSitesInternational = [...new Set(news.international.map(n => n.plantSite).filter(Boolean))];
+        const allSites = [...new Set([...violationSites, ...newsSitesDomestic, ...newsSitesInternational])];
+        
+        const options = [{ value: 'all', label: '所有廠區' }];
+        allSites.sort().forEach(site => {
+          options.push({ value: site, label: site });
+        });
+        setPlantSiteOptions(options);
+
       } catch (error) {
         console.error('Error fetching company data:', error);
         router.push('/companies');
@@ -49,15 +69,59 @@ const CompanyDetail = () => {
     fetchData();
   }, [id, router]);
 
-  if (!id || !companyInfo) {
+  // Memoized filtered violations
+  const filteredViolations = useMemo(() => {
+    if (selectedViolationPlant === 'all') {
+      return violationData;
+    }
+    return violationData.filter(v => v.plantSite === selectedViolationPlant);
+  }, [violationData, selectedViolationPlant]);
+
+  // Memoized filtered news
+  const filteredNews = useMemo(() => {
+    const filterBySite = (newsItems, site) => {
+      if (site === 'all') return newsItems;
+      return newsItems.filter(n => n.plantSite === site);
+    };
+    return {
+      international: filterBySite(newsData.international, selectedNewsPlant),
+      domestic: filterBySite(newsData.domestic, selectedNewsPlant),
+    };
+  }, [newsData, selectedNewsPlant]);
+
+  // Helper to get the label for the selected plant value
+  const getSelectedPlantLabel = (selectedValue) => {
+    const selectedOption = plantSiteOptions.find(option => option.value === selectedValue);
+    return selectedOption ? selectedOption.label : '選擇廠區';
+  };
+
+  if (loading) {
     return (
       <Layout>
         <Container maxW="container.xl" py={10}>
           <VStack spacing={6} align="stretch">
-            <Skeleton height="60px" />
-            <Skeleton height="200px" />
-            <Skeleton height="400px" />
+            <Skeleton height="40px" />
+            <Skeleton height="50px" />
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10} mt={6}>
+              <Skeleton height="300px" />
+              <Skeleton height="300px" />
+            </SimpleGrid>
+            <Skeleton height="200px" mt={6}/>
           </VStack>
+        </Container>
+      </Layout>
+    );
+  }
+  
+  if (!companyInfo) {
+     return (
+      <Layout>
+        <Container maxW="container.xl" py={10}>
+          <Alert status="error">
+            <AlertIcon />
+            <AlertTitle>無法載入公司資訊！</AlertTitle>
+            <AlertDescription>請確認公司ID是否正確，或稍後再試。</AlertDescription>
+          </Alert>
         </Container>
       </Layout>
     );
@@ -69,20 +133,21 @@ const CompanyDetail = () => {
 
   // 違規類型的顏色配置
   const getViolationTypeColor = (type) => {
-    switch (true) {
-      case type.includes('Clean Air Act') || type.includes('空氣污染'): return 'red';
-      case type.includes('Clean Water Act') || type.includes('水污染'): return 'blue';
-      case type.includes('Resource Conservation') || type.includes('廢棄物'): return 'orange';
-      case type.includes('海洋污染'): return 'cyan';
-      default: return 'gray';
-    }
+    if (!type) return 'gray';
+    if (type.toLowerCase().includes('air')) return 'red';
+    if (type.toLowerCase().includes('water')) return 'blue';
+    if (type.toLowerCase().includes('waste') || type.toLowerCase().includes('rcra')) return 'orange';
+    if (type.toLowerCase().includes('海洋')) return 'cyan';
+    return 'gray';
   };
 
   // 違規狀態的顏色配置
   const getViolationStatusColor = (status) => {
-    switch (status) {
-      case 'Active': return 'red';
-      case 'Concluded': return 'green';
+    if (!status) return 'gray';
+    switch (status.toLowerCase()) {
+      case 'active': return 'red';
+      case 'concluded': return 'green';
+      case 'unknown': return 'yellow';
       default: return 'gray';
     }
   };
@@ -106,286 +171,231 @@ const CompanyDetail = () => {
 
             <BreadcrumbItem>
               <Link href="/companies" legacyBehavior>
-                <BreadcrumbLink>{companyInfo.name.split(' (')[0]}</BreadcrumbLink>
+                <BreadcrumbLink>{companyInfo ? companyInfo.name.split(' (')[0] : '公司'}</BreadcrumbLink>
               </Link>
             </BreadcrumbItem>
 
             <BreadcrumbItem isCurrentPage>
-              <BreadcrumbLink>{companyInfo.facilityName}</BreadcrumbLink>
+              <BreadcrumbLink>{companyInfo ? companyInfo.facilityName : '詳細資料'}</BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
 
-          <Heading mt={4} color="green.600">{companyInfo.name}</Heading>
-          <Text fontSize="lg" color="gray.600">{companyInfo.englishName}</Text>
+          <Heading mt={4} color="green.600">{companyInfo ? companyInfo.name : '公司名稱載入中...'}</Heading>
+          <Text fontSize="lg" color="gray.600">{companyInfo ? companyInfo.englishName : ''}</Text>
         </Container>
       </Box>
 
       <Container maxW="container.xl" py={10}>
-        {loading ? (
-          <VStack spacing={8} align="stretch">
-            <Skeleton height="60px" />
-            <Skeleton height="200px" />
-            <Skeleton height="400px" />
-          </VStack>
-        ) : (
-          <VStack spacing={8} align="stretch">
-            <Tabs variant="enclosed-colored" colorScheme="green" onChange={handleTabChange} isFitted>
-              <TabList mb="1em">
-                <Tab>基本ESG資訊</Tab>
-                <Tab>相關新聞</Tab>
-                <Tab>環境違規記錄</Tab>
-              </TabList>
+        <Tabs variant="enclosed-colored" colorScheme="green" onChange={handleTabChange} isFitted>
+          <TabList mb="1em">
+            <Tab>基本ESG資訊</Tab>
+            <Tab>相關新聞</Tab>
+            <Tab>環境違規記錄</Tab>
+          </TabList>
 
-              <TabPanels>
-                {/* 基本ESG資訊 Tab */}
-                <TabPanel>
-                  {companyInfo && (
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
-                      <Card variant="outline">
-                        <CardBody>
-                          <VStack align="start" spacing={4}>
-                            <Heading size="md" color="green.600" mb={2}>基本資訊</Heading>
-                            <Divider />
-                            <SimpleGrid columns={2} width="100%" spacingY={4}>
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">公司名稱:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.name}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">設施名稱:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.facilityName}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">設施ID:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.facilityId}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">地址:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.address}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">產業:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.industry}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">員工數:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.employeeCount}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">成立年份:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.foundedYear}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">母公司:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.parentCompany}</Text>
-                              </Box>
-                              
-                              <Box>
-                                <Text fontWeight="bold" color="gray.600">年營收:</Text>
-                              </Box>
-                              <Box>
-                                <Text>{companyInfo.revenue}</Text>
-                              </Box>
-                            </SimpleGrid>
-                          </VStack>
-                        </CardBody>
-                      </Card>
+          <TabPanels>
+            {/* 基本ESG資訊 Tab */}
+            <TabPanel>
+              {companyInfo && (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
+                  <Card variant="outline" borderWidth="1px" borderColor="gray.200" borderRadius="md">
+                    <CardBody>
+                      <VStack align="start" spacing={4}>
+                        <Heading size="md" color="green.600" mb={2}><Icon as={FaBuilding} mr={2} />基本資訊</Heading>
+                        <Divider />
+                        {Object.entries({
+                          "公司名稱": companyInfo.name,
+                          "設施ID": companyInfo.facilityId,
+                          "地址": companyInfo.address,
+                          "產業": companyInfo.industry,
+                          "員工數": companyInfo.employeeCount,
+                          "成立年份": companyInfo.foundedYear,
+                          "母公司": companyInfo.parentCompany,
+                          "營收": companyInfo.revenue,
+                        }).map(([key, value]) => (
+                          <HStack key={key} width="100%" justifyContent="space-between">
+                            <Text fontWeight="bold" color="gray.600">{key}:</Text>
+                            <Text color="gray.800" textAlign="right">{value || 'N/A'}</Text>
+                          </HStack>
+                        ))}
+                      </VStack>
+                    </CardBody>
+                  </Card>
 
-                      <Card variant="outline">
-                        <CardBody>
-                          <VStack align="start" spacing={4}>
-                            <Heading size="md" color="green.600" mb={2}>環境表現</Heading>
-                            <Divider />
-                            
-                            <SimpleGrid columns={1} width="100%" spacing={5}>
-                              <Stat>
-                                <StatLabel color="gray.600">碳排放量</StatLabel>
-                                <StatNumber>{companyInfo.carbonEmissions}</StatNumber>
-                                <StatHelpText>2022年數據</StatHelpText>
-                              </Stat>
+                  <Card variant="outline" borderWidth="1px" borderColor="gray.200" borderRadius="md">
+                    <CardBody>
+                      <VStack align="start" spacing={4}>
+                        <Heading size="md" color="green.600" mb={2}><Icon as={FaNewspaper} mr={2} />報告與排放</Heading>
+                        <Divider />
+                         {Object.entries({
+                          "碳排放量": companyInfo.carbonEmissions,
+                          "ESG報告書": companyInfo.reportUrl ? (
+                            <ChakraLink href={companyInfo.reportUrl} isExternal color="teal.500">
+                              查看報告 <Icon as={FaExternalLinkAlt} mx="2px" />
+                            </ChakraLink>
+                          ) : 'N/A',
+                        }).map(([key, value]) => (
+                          <HStack key={key} width="100%" justifyContent="space-between">
+                            <Text fontWeight="bold" color="gray.600">{key}:</Text>
+                            <Box textAlign="right">{typeof value === 'string' ? value : value || 'N/A'}</Box>
+                          </HStack>
+                        ))}
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                </SimpleGrid>
+              )}
+            </TabPanel>
 
-                              <Stat>
-                                <StatLabel color="gray.600">近5年違規次數</StatLabel>
-                                <StatNumber color={violationData.length > 3 ? "red.500" : "green.500"}>
-                                  {violationData.length}
-                                </StatNumber>
-                                <StatHelpText>
-                                  {violationData.length > 3 ? "高於行業平均" : "低於行業平均"}
-                                </StatHelpText>
-                              </Stat>
+            {/* 相關新聞 Tab */}
+            <TabPanel>
+              <VStack align="stretch" spacing={4}>
+                <HStack>
+                  <Icon as={FaFilter} />
+                  <Text fontWeight="bold">篩選廠區:</Text>
+                  <Menu>
+                    <MenuButton 
+                      as={Button} 
+                      rightIcon={<FaChevronDown />} 
+                      variant="outline" 
+                      size="sm" 
+                      minWidth="200px" 
+                      textAlign="left"
+                    >
+                      <Flex justify="space-between" align="center" width="100%">
+                        {getSelectedPlantLabel(selectedNewsPlant)}
+                      </Flex>
+                    </MenuButton>
+                    <MenuList zIndex={10}>
+                      {plantSiteOptions.map(option => (
+                        <MenuItem 
+                          key={option.value} 
+                          onClick={() => setSelectedNewsPlant(option.value)}
+                          icon={selectedNewsPlant === option.value ? <FaCheck /> : undefined}
+                        >
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                </HStack>
+                <Heading size="md" color="green.600" mt={2}>國際新聞</Heading>
+                {filteredNews.international.length > 0 ? (
+                  filteredNews.international.map((newsItem, index) => (
+                    <Card key={`intl-${index}`} variant="outline" size="sm">
+                      <CardBody>
+                        <Heading size="sm" mb={1}>{newsItem.title}</Heading>
+                        <HStack justifyContent="space-between" color="gray.500" fontSize="sm">
+                          <Text><Icon as={FaCalendarAlt} mr={1} /> {newsItem.date} - {newsItem.source}</Text>
+                          {newsItem.plantSite && <Text>廠區: {newsItem.plantSite}</Text>}
+                        </HStack>
+                         <ChakraLink href={newsItem.url || '#'} isExternal color="teal.500" fontSize="sm" mt={1} display="block">
+                          閱讀更多 <Icon as={FaExternalLinkAlt} mx="2px" />
+                        </ChakraLink>
+                      </CardBody>
+                    </Card>
+                  ))
+                ) : (
+                  <Text>此廠區無相關國際新聞。</Text>
+                )}
+                <Heading size="md" color="green.600" mt={4}>國內新聞</Heading>
+                 {filteredNews.domestic.length > 0 ? (
+                  filteredNews.domestic.map((newsItem, index) => (
+                     <Card key={`dom-${index}`} variant="outline" size="sm">
+                      <CardBody>
+                        <Heading size="sm" mb={1}>{newsItem.title}</Heading>
+                         <HStack justifyContent="space-between" color="gray.500" fontSize="sm">
+                          <Text><Icon as={FaCalendarAlt} mr={1} /> {newsItem.date} - {newsItem.source}</Text>
+                          {newsItem.plantSite && <Text>廠區: {newsItem.plantSite}</Text>}
+                        </HStack>
+                        <ChakraLink href={newsItem.url || '#'} isExternal color="teal.500" fontSize="sm" mt={1} display="block">
+                          閱讀更多 <Icon as={FaExternalLinkAlt} mx="2px" />
+                        </ChakraLink>
+                      </CardBody>
+                    </Card>
+                  ))
+                ) : (
+                  <Text>此廠區無相關國內新聞。</Text>
+                )}
+              </VStack>
+            </TabPanel>
 
-                              <Stat>
-                                <StatLabel color="gray.600">罰款總金額</StatLabel>
-                                <StatNumber>
-                                  {violationData[0]?.amount?.includes('$') ? '$' : 'NT$'}
-                                  {violationData.reduce((total, v) => {
-                                    const amount = v.amount.replace(/[^\d]/g, '');
-                                    return total + parseInt(amount) / (v.amount.includes('$') ? 1 : 100);
-                                  }, 0).toLocaleString()}
-                                </StatNumber>
-                                <StatHelpText>累計金額</StatHelpText>
-                              </Stat>
-
-                              <Box mt={2}>
-                                <Text fontWeight="bold" color="gray.600">ESG報告:</Text>
-                                <ChakraLink href={companyInfo.reportUrl} isExternal color="green.500">
-                                  查看最新ESG報告 <Icon as={FaExternalLinkAlt} boxSize="0.8em" ml={1} />
-                                </ChakraLink>
-                              </Box>
-                            </SimpleGrid>
-                          </VStack>
-                        </CardBody>
-                      </Card>
-                    </SimpleGrid>
-                  )}
-                </TabPanel>
-
-                {/* 相關新聞 Tab */}
-                <TabPanel>
-                  <Box mb={8}>
-                    <Heading size="md" mb={4} color="green.600">國際新聞</Heading>
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
-                      {newsData.international.length > 0 ? (
-                        newsData.international.map(news => (
-                          <Card key={news.id} h="100%">
-                            <CardBody>
-                              <VStack align="start" spacing={3}>
-                                <Heading size="sm">{news.title}</Heading>
-                                <HStack>
-                                  <Icon as={FaNewspaper} />
-                                  <Text fontSize="sm" color="gray.600">{news.source}</Text>
-                                </HStack>
-                                <HStack>
-                                  <Icon as={FaCalendarAlt} />
-                                  <Text fontSize="sm" color="gray.600">{news.date}</Text>
-                                </HStack>
-                              </VStack>
-                            </CardBody>
-                            <Divider />
-                            <Box p={3}>
-                              <ChakraLink href={news.url} isExternal color="green.500">
-                                查看全文 <Icon as={FaExternalLinkAlt} boxSize="0.8em" ml={1} />
-                              </ChakraLink>
-                            </Box>
-                          </Card>
-                        ))
-                      ) : (
-                        <Box textAlign="center" py={5} width="100%">
-                          <Text color="gray.500">目前沒有相關國際新聞</Text>
-                        </Box>
-                      )}
-                    </SimpleGrid>
-                  </Box>
-
-                  <Box>
-                    <Heading size="md" mb={4} color="green.600">國內新聞</Heading>
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
-                      {newsData.domestic.length > 0 ? (
-                        newsData.domestic.map(news => (
-                          <Card key={news.id} h="100%">
-                            <CardBody>
-                              <VStack align="start" spacing={3}>
-                                <Heading size="sm">{news.title}</Heading>
-                                <HStack>
-                                  <Icon as={FaNewspaper} />
-                                  <Text fontSize="sm" color="gray.600">{news.source}</Text>
-                                </HStack>
-                                <HStack>
-                                  <Icon as={FaCalendarAlt} />
-                                  <Text fontSize="sm" color="gray.600">{news.date}</Text>
-                                </HStack>
-                              </VStack>
-                            </CardBody>
-                            <Divider />
-                            <Box p={3}>
-                              <ChakraLink href={news.url} isExternal color="green.500">
-                                查看全文 <Icon as={FaExternalLinkAlt} boxSize="0.8em" ml={1} />
-                              </ChakraLink>
-                            </Box>
-                          </Card>
-                        ))
-                      ) : (
-                        <Box textAlign="center" py={5} width="100%">
-                          <Text color="gray.500">目前沒有相關國內新聞</Text>
-                        </Box>
-                      )}
-                    </SimpleGrid>
-                  </Box>
-                </TabPanel>
-
-                {/* 環境違規記錄 Tab */}
-                <TabPanel>
-                  <Heading size="md" mb={4} color="green.600">環境違規和罰款記錄</Heading>
-                  <Box overflowX="auto">
-                    {violationData.length > 0 ? (
-                      <Table variant="simple">
-                        <Thead>
-                          <Tr>
-                            <Th>日期</Th>
-                            <Th>案件編號</Th>
-                            <Th>違規類型</Th>
-                            <Th>描述</Th>
-                            <Th>罰款金額</Th>
-                            <Th>狀態</Th>
-                            <Th>來源</Th>
+            {/* 環境違規記錄 Tab */}
+            <TabPanel>
+              <VStack align="stretch" spacing={4}>
+                <HStack>
+                  <Icon as={FaFilter} />
+                  <Text fontWeight="bold">篩選廠區:</Text>
+                  <Menu>
+                    <MenuButton 
+                      as={Button} 
+                      rightIcon={<FaChevronDown />} 
+                      variant="outline" 
+                      size="sm" 
+                      minWidth="200px" 
+                      textAlign="left"
+                    >
+                       <Flex justify="space-between" align="center" width="100%">
+                        {getSelectedPlantLabel(selectedViolationPlant)}
+                      </Flex>
+                    </MenuButton>
+                    <MenuList zIndex={10}> 
+                      {plantSiteOptions.map(option => (
+                        <MenuItem 
+                          key={option.value} 
+                          onClick={() => setSelectedViolationPlant(option.value)}
+                          icon={selectedViolationPlant === option.value ? <FaCheck /> : undefined}
+                        >
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                </HStack>
+                {filteredViolations.length > 0 ? (
+                  <Box borderWidth="1px" borderRadius="lg" overflowX="auto">
+                    <Table variant="simple" size="sm">
+                      <Thead bg="gray.100">
+                        <Tr>
+                          <Th>案件編號</Th>
+                          <Th>日期</Th>
+                          <Th>類型</Th>
+                          <Th>描述</Th>
+                          <Th>狀態</Th>
+                          <Th>來源</Th>
+                          <Th>廠區</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {filteredViolations.map((violation, index) => (
+                          <Tr key={index}>
+                            <Td>{violation.caseNumber || 'N/A'}</Td>
+                            <Td>{violation.date || 'N/A'}</Td>
+                            <Td>
+                              <Badge colorScheme={getViolationTypeColor(violation.type)} fontSize="0.8em">
+                                {violation.type || 'N/A'}
+                              </Badge>
+                            </Td>
+                            <Td>{violation.description || 'N/A'}</Td>
+                            <Td>
+                              <Badge colorScheme={getViolationStatusColor(violation.status)} fontSize="0.8em">
+                                {violation.status || 'N/A'}
+                              </Badge>
+                            </Td>
+                            <Td>{violation.source || 'N/A'}</Td>
+                            <Td>{violation.plantSite || 'N/A'}</Td>
                           </Tr>
-                        </Thead>
-                        <Tbody>
-                          {violationData.map((violation, index) => (
-                            <Tr key={index}>
-                              <Td>{violation.date}</Td>
-                              <Td>{violation.caseNumber}</Td>
-                              <Td>
-                                <Badge colorScheme={getViolationTypeColor(violation.type)}>
-                                  {violation.type}
-                                </Badge>
-                              </Td>
-                              <Td>{violation.description}</Td>
-                              <Td>{violation.amount}</Td>
-                              <Td>
-                                <Badge colorScheme={getViolationStatusColor(violation.status)}>
-                                  {violation.status}
-                                </Badge>
-                              </Td>
-                              <Td>{violation.source}</Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    ) : (
-                      <Box textAlign="center" py={10}>
-                        <Text fontSize="lg">無違規記錄</Text>
-                      </Box>
-                    )}
+                        ))}
+                      </Tbody>
+                    </Table>
                   </Box>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </VStack>
-        )}
+                ) : (
+                  <Text>此廠區無相關違規記錄。</Text>
+                )}
+              </VStack>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Container>
     </Layout>
   );
