@@ -81,6 +81,120 @@ const companiesData = [
         recentViolations: 4,
       }
     ]
+  },
+  {
+    id: 'hon-hai-precision',
+    name: '鴻海精密工業股份有限公司',
+    englishName: 'Hon Hai Precision Industry Co., Ltd.',
+    industry: '電子製造服務',
+    image: 'https://pgw.udn.com.tw/gw/photo.php?u=https://uc.udn.com.tw/photo/2024/08/21/2/30310181.jpg&x=0&y=0&sw=0&sh=0&sl=W&fw=800&exp=3600&w=930&nt=1',
+    facilities: [
+      {
+        id: 'foxconn-tucheng',
+        name: '土城總部',
+        englishName: 'Tucheng Headquarters',
+        location: '台灣, 新北',
+        riskLevel: 'low',
+        recentViolations: 1,
+      },
+      {
+        id: 'foxconn-shenzhen',
+        name: '深圳龍華廠',
+        englishName: 'Shenzhen Longhua Plant',
+        location: '中國, 深圳',
+        riskLevel: 'high',
+        recentViolations: 3,
+      },
+      {
+        id: 'foxconn-zhengzhou',
+        name: '鄭州廠',
+        englishName: 'Zhengzhou Plant',
+        location: '中國, 鄭州',
+        riskLevel: 'medium',
+        recentViolations: 1,
+      },
+      {
+        id: 'foxconn-taiyuan',
+        name: '太原廠',
+        englishName: 'Taiyuan Plant',
+        location: '中國, 太原',
+        riskLevel: 'high',
+        recentViolations: 2,
+      },
+      {
+        id: 'foxconn-wisconsin',
+        name: '威斯康辛廠',
+        englishName: 'Wisconsin Plant',
+        location: '美國, 威斯康辛',
+        riskLevel: 'medium',
+        recentViolations: 2,
+      },
+      {
+        id: 'foxconn-ohio',
+        name: '俄亥俄廠',
+        englishName: 'Ohio Plant',
+        location: '美國, 俄亥俄',
+        riskLevel: 'low',
+        recentViolations: 1,
+      }
+    ]
+  },
+  {
+    id: 'tsmc',
+    name: '台灣積體電路製造股份有限公司',
+    englishName: 'Taiwan Semiconductor Manufacturing Company Limited',
+    industry: '半導體製造',
+    image: 'https://ibw.bwnet.com.tw/ac_gallery/2025/02/a42bbe0f-0575-ceba-4fb3-e73942a58f6c_800.webp',
+    facilities: [
+      {
+        id: 'tsmc-hsinchu',
+        name: '新竹廠',
+        englishName: 'Hsinchu Fab',
+        location: '台灣, 新竹',
+        riskLevel: 'medium',
+        recentViolations: 3,
+      },
+      {
+        id: 'tsmc-tainan',
+        name: '台南廠',
+        englishName: 'Tainan Fab',
+        location: '台灣, 台南',
+        riskLevel: 'low',
+        recentViolations: 1,
+      },
+      {
+        id: 'tsmc-taichung',
+        name: '台中廠',
+        englishName: 'Taichung Fab',
+        location: '台灣, 台中',
+        riskLevel: 'low',
+        recentViolations: 1,
+      },
+      {
+        id: 'tsmc-kaohsiung',
+        name: '高雄廠',
+        englishName: 'Kaohsiung Fab',
+        location: '台灣, 高雄',
+        riskLevel: 'medium',
+        recentViolations: 1,
+      },
+      {
+        id: 'tsmc-arizona',
+        name: '亞利桑那廠',
+        englishName: 'Arizona Fab',
+        location: '美國, 亞利桑那',
+        riskLevel: 'high',
+        recentViolations: 2,
+      },
+      {
+        id: 'tsmc-nanjing',
+        name: '南京廠',
+        englishName: 'Nanjing Fab',
+        location: '中國, 南京',
+        riskLevel: 'low',
+        recentViolations: 1,
+      }
+    ]
   }
 ];
 
